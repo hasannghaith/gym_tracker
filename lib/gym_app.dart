@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'gym_screen.dart';
+import 'history_screen.dart';
 
 class GymApp extends StatelessWidget {
   const GymApp({super.key});
@@ -17,7 +18,11 @@ class GymApp extends StatelessWidget {
           secondary: Color(0xFF00E676),
         ),
       ),
-      home: const GymScreen(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const GymScreen(),
+        '/history': (context) => const HistoryScreen(),
+      },
     );
   }
 }

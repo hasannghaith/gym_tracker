@@ -1,8 +1,7 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'models.dart';
 import 'widgets.dart';
+import 'api_service.dart';
 
 class GymScreen extends StatefulWidget {
   const GymScreen({super.key});
@@ -14,6 +13,9 @@ class GymScreen extends StatefulWidget {
 class _GymScreenState extends State<GymScreen> {
   bool _sessionStarted = false;
   List<Exercise> _exercises = [];
+  Session? _currentSession;
+
+  final ApiService _apiService = ApiService();
 
   final TextEditingController _exerciseNameController =
       TextEditingController();
@@ -25,13 +27,37 @@ class _GymScreenState extends State<GymScreen> {
     super.dispose();
   }
 
-  void _startSession() {
-    setState(() {
-      _sessionStarted = true;
-    });
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red[700],
+      ),
+    );
   }
 
-  void _resetSession() {
+  Future<void> _startSession() async {
+    try {
+      final session = await _apiService.createSession();
+      setState(() {
+        _currentSession = session;
+        _sessionStarted = true;
+      });
+    } catch (e) {
+      _showError('Failed to start session. Please try again.');
+    }
+  }
+
+  Future<void> _resetSession() async {
+    if (_currentSession?.id != null) {
+      try {
+        await _apiService.endSession(_currentSession!.id!, DateTime.now());
+      } catch (e) {
+        _showError('Failed to end session on server.');
+      }
+    }
+
     for (TextEditingController c in _repsControllers) {
       c.dispose();
     }
@@ -42,39 +68,87 @@ class _GymScreenState extends State<GymScreen> {
     setState(() {
       _sessionStarted = false;
       _exercises = [];
+      _currentSession = null;
       _repsControllers = [];
       _weightControllers = [];
       _exerciseNameController.clear();
     });
   }
 
-  void _addExercise() {
+  Future<void> _addExercise() async {
     String name = _exerciseNameController.text.trim();
     if (name.isEmpty) return;
 
-    setState(() {
-      _exercises.add(Exercise(name: name));
-      _repsControllers.add(TextEditingController());
-      _weightControllers.add(TextEditingController());
-      _exerciseNameController.clear();
-    });
+    if (_currentSession?.id == null) {
+      setState(() {
+        _exercises.add(Exercise(name: name));
+        _repsControllers.add(TextEditingController());
+        _weightControllers.add(TextEditingController());
+        _exerciseNameController.clear();
+      });
+      return;
+    }
+
+    try {
+      final exercise =
+          await _apiService.createExercise(_currentSession!.id!, name);
+      setState(() {
+        _exercises.add(exercise);
+        _repsControllers.add(TextEditingController());
+        _weightControllers.add(TextEditingController());
+        _exerciseNameController.clear();
+      });
+    } catch (e) {
+      _showError('Failed to add exercise. Please try again.');
+    }
   }
 
-  void _addSet(int exerciseIndex) {
-    String reps = _repsControllers[exerciseIndex].text.trim();
-    String weight = _weightControllers[exerciseIndex].text.trim();
-    if (reps.isEmpty || weight.isEmpty) return;
+  Future<void> _addSet(int exerciseIndex) async {
+    String repsText = _repsControllers[exerciseIndex].text.trim();
+    String weightText = _weightControllers[exerciseIndex].text.trim();
+    if (repsText.isEmpty || weightText.isEmpty) return;
 
-    setState(() {
-      _exercises[exerciseIndex].sets.add(
-        WorkoutSet(reps: reps, weight: weight),
-      );
-      _repsControllers[exerciseIndex].clear();
-      _weightControllers[exerciseIndex].clear();
-    });
+    int? reps = int.tryParse(repsText);
+    double? weight = double.tryParse(weightText);
+    if (reps == null || weight == null) return;
+
+    final exercise = _exercises[exerciseIndex];
+
+    if (exercise.id == null) {
+      setState(() {
+        _exercises[exerciseIndex].sets.add(
+          WorkoutSet(reps: reps, weight: weight),
+        );
+        _repsControllers[exerciseIndex].clear();
+        _weightControllers[exerciseIndex].clear();
+      });
+      return;
+    }
+
+    try {
+      final workoutSet =
+          await _apiService.createSet(exercise.id!, reps, weight);
+      setState(() {
+        _exercises[exerciseIndex].sets.add(workoutSet);
+        _repsControllers[exerciseIndex].clear();
+        _weightControllers[exerciseIndex].clear();
+      });
+    } catch (e) {
+      _showError('Failed to add set. Please try again.');
+    }
   }
 
-  void _removeExercise(int index) {
+  Future<void> _removeExercise(int index) async {
+    final exercise = _exercises[index];
+
+    if (exercise.id != null) {
+      try {
+        await _apiService.deleteExercise(exercise.id!);
+      } catch (e) {
+        _showError('Failed to remove exercise from server.');
+      }
+    }
+
     _repsControllers[index].dispose();
     _weightControllers[index].dispose();
 
@@ -106,6 +180,12 @@ class _GymScreenState extends State<GymScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.pushNamed(context, '/history');
+            },
+            icon: const Icon(Icons.history, color: Color(0xFF00E676)),
+          ),
           if (_sessionStarted)
             Padding(
               padding: const EdgeInsets.only(right: 8),
