@@ -2,18 +2,15 @@ const express = require('express');
 const router = express.Router({ mergeParams: true });
 const pool = require('../db');
 
-// POST /api/exercises/:exerciseId/sets — Create set in exercise
 router.post('/exercises/:exerciseId/sets', async (req, res, next) => {
   try {
     const { exerciseId } = req.params;
     const { reps, weight } = req.body;
 
-    // Validate reps and weight fields
     if (reps === undefined || reps === null || weight === undefined || weight === null) {
       return res.status(400).json({ error: 'Reps and weight are required' });
     }
 
-    // Verify exercise exists
     const [exerciseRows] = await pool.execute(
       'SELECT id FROM exercises WHERE id = ?',
       [exerciseId]
@@ -23,7 +20,6 @@ router.post('/exercises/:exerciseId/sets', async (req, res, next) => {
       return res.status(404).json({ error: 'Exercise not found' });
     }
 
-    // Insert set
     const [result] = await pool.execute(
       'INSERT INTO workout_sets (exercise_id, reps, weight) VALUES (?, ?, ?)',
       [exerciseId, reps, weight]
@@ -40,7 +36,6 @@ router.post('/exercises/:exerciseId/sets', async (req, res, next) => {
   }
 });
 
-// GET /api/exercises/:exerciseId/sets — List sets for exercise
 router.get('/exercises/:exerciseId/sets', async (req, res, next) => {
   try {
     const { exerciseId } = req.params;
@@ -63,7 +58,6 @@ router.get('/exercises/:exerciseId/sets', async (req, res, next) => {
   }
 });
 
-// PUT /api/sets/:id — Update set reps and weight
 router.put('/sets/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -94,7 +88,6 @@ router.put('/sets/:id', async (req, res, next) => {
   }
 });
 
-// DELETE /api/sets/:id — Delete set
 router.delete('/sets/:id', async (req, res, next) => {
   try {
     const { id } = req.params;

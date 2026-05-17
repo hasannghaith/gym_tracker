@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'gym_screen.dart';
-import 'history_screen.dart';
+import 'screens/gym_screen.dart';
+import 'screens/history_screen.dart';
 
 class GymApp extends StatelessWidget {
   const GymApp({super.key});

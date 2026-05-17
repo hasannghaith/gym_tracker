@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 
-// POST /api/sessions — Create a new session
 router.post('/', async (req, res, next) => {
   try {
     const [result] = await pool.execute(
@@ -18,7 +17,6 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-// GET /api/sessions — List all sessions ordered by started_at DESC with exercise_count
 router.get('/', async (req, res, next) => {
   try {
     const [rows] = await pool.execute(
@@ -29,7 +27,6 @@ router.get('/', async (req, res, next) => {
        GROUP BY s.id
        ORDER BY s.started_at DESC`
     );
-    // Ensure exercise_count is a number
     const sessions = rows.map(row => ({
       ...row,
       exercise_count: Number(row.exercise_count)
@@ -40,12 +37,10 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// GET /api/sessions/:id — Get session with nested exercises and sets
 router.get('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    // Fetch the session
     const [sessionRows] = await pool.execute(
       'SELECT id, started_at, ended_at FROM sessions WHERE id = ?',
       [id]
@@ -57,13 +52,11 @@ router.get('/:id', async (req, res, next) => {
 
     const session = sessionRows[0];
 
-    // Fetch exercises for this session
     const [exerciseRows] = await pool.execute(
       'SELECT id, name FROM exercises WHERE session_id = ?',
       [id]
     );
 
-    // Fetch sets for each exercise
     const exercises = [];
     for (const exercise of exerciseRows) {
       const [setRows] = await pool.execute(
@@ -88,7 +81,6 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
-// PUT /api/sessions/:id — Update ended_at field
 router.put('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -113,7 +105,6 @@ router.put('/:id', async (req, res, next) => {
   }
 });
 
-// DELETE /api/sessions/:id — Delete session (cascade handled by DB)
 router.delete('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;

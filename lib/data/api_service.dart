@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:http/http.dart' as http;
-import 'models.dart';
+import '../models/models.dart';
 
 class ApiService {
   static const String baseUrl = 'https://gym-tracker-p09h.onrender.com/api';
@@ -17,19 +17,14 @@ class ApiService {
     print('[ApiService] $message');
   }
 
-  // --- Sessions ---
-
   Future<Session> createSession() async {
     final url = '$baseUrl/sessions';
     _log('POST $url');
     try {
       final response = await http
-          .post(Uri.parse(url),
-              headers: {'Content-Type': 'application/json'})
+          .post(Uri.parse(url), headers: {'Content-Type': 'application/json'})
           .timeout(_timeout);
-
       _log('POST $url → ${response.statusCode}: ${response.body}');
-
       if (response.statusCode == 201) {
         return Session.fromJson(jsonDecode(response.body));
       }
@@ -45,9 +40,7 @@ class ApiService {
     _log('GET $url');
     try {
       final response = await http.get(Uri.parse(url)).timeout(_timeout);
-
       _log('GET $url → ${response.statusCode}: ${response.body}');
-
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         return data.map((json) => Session.fromJson(json)).toList();
@@ -64,9 +57,7 @@ class ApiService {
     _log('GET $url');
     try {
       final response = await http.get(Uri.parse(url)).timeout(_timeout);
-
       _log('GET $url → ${response.statusCode}: ${response.body}');
-
       if (response.statusCode == 200) {
         return Session.fromJson(jsonDecode(response.body));
       }
@@ -83,15 +74,9 @@ class ApiService {
     _log('PUT $url body=$body');
     try {
       final response = await http
-          .put(
-            Uri.parse(url),
-            headers: {'Content-Type': 'application/json'},
-            body: body,
-          )
+          .put(Uri.parse(url), headers: {'Content-Type': 'application/json'}, body: body)
           .timeout(_timeout);
-
       _log('PUT $url → ${response.statusCode}: ${response.body}');
-
       if (response.statusCode == 200) {
         return Session.fromJson(jsonDecode(response.body));
       }
@@ -107,9 +92,7 @@ class ApiService {
     _log('DELETE $url');
     try {
       final response = await http.delete(Uri.parse(url)).timeout(_timeout);
-
       _log('DELETE $url → ${response.statusCode}: ${response.body}');
-
       if (response.statusCode != 200) {
         throw ApiException('Failed to delete session', response.statusCode);
       }
@@ -119,23 +102,15 @@ class ApiService {
     }
   }
 
-  // --- Exercises ---
-
   Future<Exercise> createExercise(int sessionId, String name) async {
     final url = '$baseUrl/sessions/$sessionId/exercises';
     final body = jsonEncode({'name': name});
     _log('POST $url body=$body');
     try {
       final response = await http
-          .post(
-            Uri.parse(url),
-            headers: {'Content-Type': 'application/json'},
-            body: body,
-          )
+          .post(Uri.parse(url), headers: {'Content-Type': 'application/json'}, body: body)
           .timeout(_timeout);
-
       _log('POST $url → ${response.statusCode}: ${response.body}');
-
       if (response.statusCode == 201) {
         return Exercise.fromJson(jsonDecode(response.body));
       }
@@ -151,9 +126,7 @@ class ApiService {
     _log('GET $url');
     try {
       final response = await http.get(Uri.parse(url)).timeout(_timeout);
-
       _log('GET $url → ${response.statusCode}: ${response.body}');
-
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         return data.map((json) => Exercise.fromJson(json)).toList();
@@ -171,15 +144,9 @@ class ApiService {
     _log('PUT $url body=$body');
     try {
       final response = await http
-          .put(
-            Uri.parse(url),
-            headers: {'Content-Type': 'application/json'},
-            body: body,
-          )
+          .put(Uri.parse(url), headers: {'Content-Type': 'application/json'}, body: body)
           .timeout(_timeout);
-
       _log('PUT $url → ${response.statusCode}: ${response.body}');
-
       if (response.statusCode == 200) {
         return Exercise.fromJson(jsonDecode(response.body));
       }
@@ -195,9 +162,7 @@ class ApiService {
     _log('DELETE $url');
     try {
       final response = await http.delete(Uri.parse(url)).timeout(_timeout);
-
       _log('DELETE $url → ${response.statusCode}: ${response.body}');
-
       if (response.statusCode != 200) {
         throw ApiException('Failed to delete exercise', response.statusCode);
       }
@@ -207,23 +172,15 @@ class ApiService {
     }
   }
 
-  // --- Sets ---
-
   Future<WorkoutSet> createSet(int exerciseId, int reps, double weight) async {
     final url = '$baseUrl/exercises/$exerciseId/sets';
     final body = jsonEncode({'reps': reps, 'weight': weight});
     _log('POST $url body=$body');
     try {
       final response = await http
-          .post(
-            Uri.parse(url),
-            headers: {'Content-Type': 'application/json'},
-            body: body,
-          )
+          .post(Uri.parse(url), headers: {'Content-Type': 'application/json'}, body: body)
           .timeout(_timeout);
-
       _log('POST $url → ${response.statusCode}: ${response.body}');
-
       if (response.statusCode == 201) {
         return WorkoutSet.fromJson(jsonDecode(response.body));
       }
@@ -239,9 +196,7 @@ class ApiService {
     _log('GET $url');
     try {
       final response = await http.get(Uri.parse(url)).timeout(_timeout);
-
       _log('GET $url → ${response.statusCode}: ${response.body}');
-
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         return data.map((json) => WorkoutSet.fromJson(json)).toList();
@@ -259,15 +214,9 @@ class ApiService {
     _log('PUT $url body=$body');
     try {
       final response = await http
-          .put(
-            Uri.parse(url),
-            headers: {'Content-Type': 'application/json'},
-            body: body,
-          )
+          .put(Uri.parse(url), headers: {'Content-Type': 'application/json'}, body: body)
           .timeout(_timeout);
-
       _log('PUT $url → ${response.statusCode}: ${response.body}');
-
       if (response.statusCode == 200) {
         return WorkoutSet.fromJson(jsonDecode(response.body));
       }
@@ -282,11 +231,8 @@ class ApiService {
     final url = '$baseUrl/sets/$id';
     _log('DELETE $url');
     try {
-      final response =
-          await http.delete(Uri.parse(url)).timeout(_timeout);
-
+      final response = await http.delete(Uri.parse(url)).timeout(_timeout);
       _log('DELETE $url → ${response.statusCode}: ${response.body}');
-
       if (response.statusCode != 200) {
         throw ApiException('Failed to delete set', response.statusCode);
       }

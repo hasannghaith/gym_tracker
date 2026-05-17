@@ -2,18 +2,15 @@ const express = require('express');
 const router = express.Router({ mergeParams: true });
 const pool = require('../db');
 
-// POST /api/sessions/:sessionId/exercises — Create exercise in session
 router.post('/sessions/:sessionId/exercises', async (req, res, next) => {
   try {
     const { sessionId } = req.params;
     const { name } = req.body;
 
-    // Validate name field
     if (!name || name.trim() === '') {
       return res.status(400).json({ error: 'Name is required' });
     }
 
-    // Verify session exists
     const [sessionRows] = await pool.execute(
       'SELECT id FROM sessions WHERE id = ?',
       [sessionId]
@@ -23,7 +20,6 @@ router.post('/sessions/:sessionId/exercises', async (req, res, next) => {
       return res.status(404).json({ error: 'Session not found' });
     }
 
-    // Insert exercise
     const [result] = await pool.execute(
       'INSERT INTO exercises (session_id, name) VALUES (?, ?)',
       [sessionId, name]
@@ -39,7 +35,6 @@ router.post('/sessions/:sessionId/exercises', async (req, res, next) => {
   }
 });
 
-// GET /api/sessions/:sessionId/exercises — List exercises for session with their sets
 router.get('/sessions/:sessionId/exercises', async (req, res, next) => {
   try {
     const { sessionId } = req.params;
@@ -49,7 +44,6 @@ router.get('/sessions/:sessionId/exercises', async (req, res, next) => {
       [sessionId]
     );
 
-    // Fetch sets for each exercise
     const exercises = [];
     for (const exercise of exerciseRows) {
       const [setRows] = await pool.execute(
@@ -74,7 +68,6 @@ router.get('/sessions/:sessionId/exercises', async (req, res, next) => {
   }
 });
 
-// PUT /api/exercises/:id — Update exercise name
 router.put('/exercises/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -99,7 +92,6 @@ router.put('/exercises/:id', async (req, res, next) => {
   }
 });
 
-// DELETE /api/exercises/:id — Delete exercise (cascade handled by DB)
 router.delete('/exercises/:id', async (req, res, next) => {
   try {
     const { id } = req.params;

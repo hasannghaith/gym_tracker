@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'models.dart';
-import 'api_service.dart';
+import '../models/models.dart';
+import '../data/api_service.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -13,6 +13,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   final ApiService _apiService = ApiService();
   List<Session> _sessions = [];
   bool _isLoading = true;
+  bool _isNavigating = false;
   String? _error;
 
   @override
@@ -89,9 +90,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Future<void> _viewSessionDetail(Session session) async {
     if (session.id == null) return;
 
+    setState(() {
+      _isNavigating = true;
+    });
+
     try {
       final detailedSession = await _apiService.getSession(session.id!);
       if (!mounted) return;
+
+      setState(() {
+        _isNavigating = false;
+      });
 
       Navigator.push(
         context,
@@ -102,6 +111,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
       );
     } catch (e) {
       if (!mounted) return;
+      setState(() {
+        _isNavigating = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Failed to load session details.'),
@@ -127,7 +139,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ),
         iconTheme: const IconThemeData(color: Color(0xFF00E676)),
       ),
-      body: _buildBody(),
+      body: Stack(
+        children: [
+          _buildBody(),
+          if (_isNavigating)
+            Container(
+              color: Colors.black54,
+              child: const Center(
+                child: CircularProgressIndicator(color: Color(0xFF00E676)),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -161,7 +184,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
       );
     }
 
-    if (_sessions.isEmpty) {
+    final filteredSessions = _sessions.where((s) =>
+        s.exercises.isNotEmpty || s.exerciseCount > 0).toList();
+
+    if (filteredSessions.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -183,10 +209,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
       color: const Color(0xFF00E676),
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: _sessions.length,
+        itemCount: filteredSessions.length,
         itemBuilder: (context, index) {
-          final session = _sessions[index];
-          return _buildSessionTile(session, index);
+          final session = filteredSessions[index];
+          final originalIndex = _sessions.indexOf(session);
+          return _buildSessionTile(session, originalIndex);
         },
       ),
     );
@@ -194,7 +221,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Widget _buildSessionTile(Session session, int index) {
     final date = _formatDate(session.startedAt);
-    final exerciseCount = session.exercises.length;
+    final exerciseCount = session.exercises.isNotEmpty
+        ? session.exercises.length
+        : session.exerciseCount;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
